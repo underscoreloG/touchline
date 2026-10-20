@@ -1,0 +1,104 @@
+/* 2D match view: HUD around the pitch canvas. Uses tokens.css. --home / --away are set by match.js. */
+.mv {
+  --home: #2b6cff; --away: #e5484d; --home-ink: #fff; --away-ink: #fff;
+  display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 1180px; margin: 0 auto;
+  color: var(--text); font-family: var(--font-ui); user-select: none;
+}
+.mv-btn {
+  background: var(--bg-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px;
+  padding: 7px 12px; font-size: 13px; font-weight: 600; line-height: 1; min-height: 32px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.mv-btn:hover { background: var(--bg-3); }
+.mv-btn:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+.mv-btn[aria-pressed="true"] { background: var(--accent-2); color: #06140d; border-color: transparent; }
+
+/* top bar: home half in home colour, away half in away colour */
+.mv-top {
+  display: grid; grid-template-columns: auto 1fr auto 1fr auto; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: var(--radius);
+  background: linear-gradient(90deg, var(--home) 0%, color-mix(in srgb, var(--home) 70%, #000) 49.9%, color-mix(in srgb, var(--away) 70%, #000) 50.1%, var(--away) 100%);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.mv-clock {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 58px;
+  background: rgba(7, 9, 15, 0.82); border-radius: 7px; padding: 4px 8px;
+}
+.mv-time { font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; }
+.mv-dots { display: flex; gap: 3px; }
+.mv-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.18); }
+.mv-dots i.on { background: var(--accent-2); }
+.mv-dots i.cur { background: #fff; animation: mv-blink 1s infinite alternate; }
+@keyframes mv-blink { from { opacity: 0.35; } to { opacity: 1; } }
+.mv-side { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mv-home { justify-content: flex-end; color: var(--home-ink); }
+.mv-away { justify-content: flex-start; color: var(--away-ink); }
+.mv-name {
+  font-family: var(--font-display); font-weight: 700; font-size: 17px; text-transform: uppercase; letter-spacing: 0.6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.mv-crest { width: 30px; height: 30px; flex: 0 0 auto; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5)); }
+.mv-crest svg { width: 100%; height: 100%; display: block; }
+.mv-score { display: flex; gap: 3px; }
+.mv-score b {
+  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 6px;
+  background: rgba(7, 9, 15, 0.86); color: #fff; font-family: var(--font-display); font-size: 22px; font-variant-numeric: tabular-nums;
+}
+.mv-score b.mv-pop { animation: mv-pop 0.9s ease-out; }
+@keyframes mv-pop { 0% { transform: scale(1); background: #fff; color: #000; } 25% { transform: scale(1.35); } 100% { transform: scale(1); } }
+.mv-pause { background: rgba(7, 9, 15, 0.82); }
+
+/* possession / momentum bar with event markers */
+.mv-mom { position: relative; height: 12px; margin: 0 2px; }
+.mv-mom-bar { position: absolute; inset: 3px 0; display: flex; border-radius: 3px; overflow: hidden; background: var(--away); }
+.mv-mom-home { display: block; height: 100%; background: var(--home); transition: width 0.6s ease; width: 50%; }
+.mv-mom-away { display: block; flex: 1; }
+.mv-marks { position: absolute; inset: 0; pointer-events: none; }
+.mv-mark { position: absolute; top: 0; width: 6px; height: 12px; margin-left: -3px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6); }
+.mv-mark.mv-goal { width: 10px; height: 10px; top: 1px; margin-left: -5px; border-radius: 50%; background: #fff; }
+.mv-mark.mv-yellow { width: 5px; height: 8px; top: 2px; background: #ffd21f; }
+.mv-mark.mv-red { width: 5px; height: 8px; top: 2px; background: #ff3341; }
+
+.mv-pitch { position: relative; width: 100%; border-radius: var(--radius); overflow: hidden; background: #0a0d14; line-height: 0; }
+.mv-pitch canvas { display: block; margin: 0 auto; }
+.mv-prompt {
+  position: absolute; left: 50%; top: 12px; transform: translateX(-50%); line-height: 1.2;
+  background: rgba(7, 9, 15, 0.9); border: 1px solid var(--warn); color: var(--warn);
+  padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 13px;
+}
+
+/* commentary bar tinted by the team in possession */
+.mv-comm {
+  display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 6px 12px; border-radius: var(--radius);
+  background: var(--bg-2); border-left: 5px solid var(--bg-3); transition: background 0.3s, border-color 0.3s;
+  font-size: 15px; font-weight: 600;
+}
+.mv-comm[data-side="home"] { background: color-mix(in srgb, var(--home) 26%, var(--bg-1)); border-left-color: var(--home); }
+.mv-comm[data-side="away"] { background: color-mix(in srgb, var(--away) 26%, var(--bg-1)); border-left-color: var(--away); }
+.mv-comm-min { font-family: var(--font-display); color: var(--text-dim); font-size: 13px; min-width: 38px; font-variant-numeric: tabular-nums; }
+.mv-comm-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.mv-ctrl { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; }
+.mv-speed { display: flex; gap: 2px; background: var(--bg-1); border-radius: 9px; padding: 2px; }
+.mv-speed .mv-btn { min-width: 40px; }
+
+@media (max-width: 560px) {
+  .mv { gap: 4px; }
+  .mv-top { grid-template-columns: auto 1fr auto 1fr auto; gap: 4px; padding: 4px; }
+  .mv-name { font-size: 12px; letter-spacing: 0.2px; }
+  .mv-crest { width: 20px; height: 20px; }
+  .mv-score b { width: 26px; height: 28px; font-size: 18px; }
+  .mv-time { font-size: 14px; }
+  .mv-clock { min-width: 44px; padding: 3px 5px; }
+  .mv-dots i { width: 4px; height: 4px; }
+  .mv-pause { padding: 6px 7px; font-size: 11px; }
+  .mv-comm { font-size: 13px; min-height: 34px; padding: 5px 8px; }
+  .mv-btn { padding: 6px 8px; font-size: 12px; }
+  .mv-speed .mv-btn { min-width: 32px; }
+}
+@media (max-width: 420px) {
+  /* one control row that always fits (the view sizes the pitch so this row stays on screen) */
+  .mv-ctrl { flex-wrap: nowrap; gap: 4px; }
+  .mv-ctrl .mv-btn { padding: 5px 6px; font-size: 11px; min-height: 30px; white-space: nowrap; }
+  .mv-speed .mv-btn { min-width: 27px; }
+}

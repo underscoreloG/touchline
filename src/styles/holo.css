@@ -1,0 +1,88 @@
+/* Holographic foil. Technique: layered gradients whose background-position follows the pointer through
+   CSS variables (--mx --my pointer %, --bx --by foil offset %, --hyp distance from centre 0..1, --rx --ry tilt),
+   blended onto the card with mix-blend-mode. Written from scratch for Touchline.
+   Cost model: bronze / silver render no foil layers at all. Gold = one gradient + glare. Elite / Icon = foil +
+   sparkle pseudo-element + glare. Variables are written at most once per animation frame by attachTilt. */
+
+.tc-foil, .tc-glare { position: absolute; inset: 0; pointer-events: none; }
+.tc-glare-flat { display: none; }
+
+/* ---------------------------------------------------------------- gold: a single metallic sheen band */
+.tc-r-gold .tc-foil {
+  background-image: linear-gradient(112deg,
+    transparent 0%, transparent 36%,
+    rgba(255, 248, 205, 0.0) 39%, rgba(255, 250, 225, 0.85) 46.5%, rgba(255, 255, 255, 1) 50%,
+    rgba(255, 233, 150, 0.8) 53.5%, rgba(255, 240, 180, 0) 61%, transparent 100%);
+  background-size: 260% 260%;
+  background-position: var(--bx) var(--by);
+  mix-blend-mode: soft-light;
+  opacity: calc(0.55 + var(--hyp) * 0.45);
+}
+
+/* ---------------------------------------------------------------- elite: rainbow holo on a dark card */
+.tc-r-elite .tc-foil {
+  background-image:
+    repeating-linear-gradient(118deg,
+      hsl(320, 95%, 66%) 0%, hsl(45, 100%, 64%) 4.5%, hsl(140, 90%, 62%) 9%,
+      hsl(190, 100%, 62%) 13.5%, hsl(255, 95%, 70%) 18%, hsl(320, 95%, 66%) 22.5%),
+    repeating-linear-gradient(62deg,
+      rgba(8, 10, 34, 0.95) 0%, rgba(150, 175, 255, 0.55) 2.6%, rgba(8, 10, 34, 0.95) 5.2%),
+    radial-gradient(farthest-corner circle at var(--mx) var(--my),
+      rgba(255, 255, 255, 0.55) 0%, rgba(120, 120, 160, 0.25) 35%, rgba(0, 0, 0, 0.45) 90%);
+  background-size: 360% 360%, 240% 240%, 100% 100%;
+  background-position: var(--bx) var(--by), calc(100% - var(--bx)) calc(100% - var(--by)), center;
+  background-blend-mode: overlay, multiply, normal;
+  mix-blend-mode: color-dodge;
+  filter: saturate(1.35) contrast(1.1);
+  opacity: calc(0.3 + var(--hyp) * 0.55);
+}
+
+/* ---------------------------------------------------------------- icon: pink-gold sun pillars on pearl */
+.tc-r-icon .tc-foil {
+  background-image:
+    repeating-linear-gradient(102deg,
+      rgba(255, 92, 205, 0.95) 0%, rgba(255, 207, 90, 0.95) 5%, rgba(255, 255, 255, 0.9) 8%,
+      rgba(110, 215, 255, 0.85) 12%, rgba(185, 120, 255, 0.85) 15.5%, rgba(255, 92, 205, 0.95) 19%),
+    radial-gradient(farthest-corner circle at var(--mx) var(--my),
+      rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.1) 40%, rgba(80, 0, 50, 0.3) 95%);
+  background-size: 420% 420%, 100% 100%;
+  background-position: var(--bx) var(--by), center;
+  background-blend-mode: soft-light, normal;
+  mix-blend-mode: multiply;
+  opacity: calc(0.48 + var(--hyp) * 0.42);
+}
+
+/* sparkle grain (elite + icon). Parallax: moves against the pointer. */
+.tc-r-elite .tc-foil::after, .tc-r-icon .tc-foil::after {
+  content: ''; position: absolute; inset: 0;
+  background-image:
+    radial-gradient(circle at 30% 40%, #fff 0, #fff 0.6px, transparent 1.5px),
+    radial-gradient(circle at 70% 20%, #fff 0, #fff 0.5px, transparent 1.3px),
+    radial-gradient(circle at 50% 70%, #fff 0, #fff 0.9px, transparent 1.9px);
+  background-size: 19px 23px, 31px 17px, 43px 37px;
+  background-position:
+    calc(var(--bx) * -0.5) calc(var(--by) * -0.5),
+    calc(var(--bx) * 0.7) calc(var(--by) * -0.3),
+    calc(var(--bx) * -0.25) calc(var(--by) * 0.6);
+  mix-blend-mode: screen;
+  opacity: calc(0.25 + var(--hyp) * 0.75);
+}
+.tc-r-icon .tc-foil::after { mix-blend-mode: normal; filter: drop-shadow(0 0 1px #ffcf5a); opacity: calc(0.4 + var(--hyp) * 0.6); }
+
+/* ---------------------------------------------------------------- glare (gold, elite, icon) */
+.tc-foiled .tc-glare {
+  background: radial-gradient(farthest-corner circle at var(--mx) var(--my),
+    rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.18) 20%, rgba(0, 0, 0, 0.3) 95%);
+  mix-blend-mode: overlay;
+  opacity: calc(var(--hyp) * 0.55);
+}
+
+/* thumbnails: keep the colour read, drop the expensive bits */
+.tc-size-thumb .tc-foil::after { display: none; }
+.tc-size-thumb .tc-foil { filter: none; }
+
+/* the tilt itself */
+.tc-tiltable { cursor: grab; }
+.tc-tiltable .tc-tilt { transition: filter 0.2s; }
+.tc-active .tc-tilt { filter: drop-shadow(0 calc(var(--tcw) * 0.06) calc(var(--tcw) * 0.07) rgba(0, 0, 0, 0.6)); }
+

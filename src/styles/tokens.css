@@ -1,0 +1,39 @@
+/* Design tokens. Dark stadium-night theme. Shared by every screen. */
+:root {
+  --bg-0: #07090f;
+  --bg-1: #0d1220;
+  --bg-2: #141b2e;
+  --bg-3: #1d2740;
+  --line: rgba(255, 255, 255, 0.08);
+  --text: #eef2fb;
+  --text-dim: #9aa6c4;
+  --accent: #ff3b4e;
+  --accent-2: #3ddc97;
+  --warn: #ffb020;
+  --good: #3ddc97;
+  --bad: #ff4d5e;
+
+  /* rarity palette: readable at thumbnail size from frame colour alone */
+  --r-bronze: #b7773f;
+  --r-bronze-hi: #e2a46a;
+  --r-silver: #b9c4d6;
+  --r-silver-hi: #eef3fb;
+  --r-gold: #f2c440;
+  --r-gold-hi: #fff0a8;
+  --r-elite: #7a5cff;
+  --r-elite-hi: #19e3ff;
+  --r-icon: #ff6ad5;
+  --r-icon-hi: #fff2c2;
+
+  --font-ui: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Arial Narrow", "Segoe UI Semibold", "Helvetica Neue", Arial, sans-serif;
+  --radius: 10px;
+  --card-w: 150px; /* card size is set by this variable; height follows aspect ratio 0.7 */
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg-0); color: var(--text); font-family: var(--font-ui); }
+body { overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; cursor: pointer; }
+/* Reduced motion: no CSS transitions or animations at all. (A 0.01 ms duration still starts real transitions, and layout reads right after a style change then return stale geometry.) */
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
