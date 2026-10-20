@@ -1,6 +1,6 @@
 // Boot, router, state store, action dispatch. Game rules live in logic/, screens in ui/.
 
-import { S } from './strings.js';
+import { S, fmt } from './strings.js';
 import { rngFrom } from './logic/rng.js';
 import { World } from './logic/world.js';
 import { generateWorld } from './logic/generator.js';
@@ -21,6 +21,8 @@ import { openPackUI } from './ui/packOpening.js';
 import { packView, cardView } from './ui/viewmodel.js';
 import { crestSVG } from './ui/components/crest.js';
 import audio from './ui/audio.js';
+import { createAutosave, readSave, deleteSave, exportToFile, importFromFile, unpackSave } from './ui/saveStore.js';
+import { packSave } from './logic/save.js';
 import { mountCheats, CHEAT_CSS } from './ui/cheats.js';
 import * as cheats from './logic/cheats.js';
 
@@ -30,11 +32,22 @@ const SCREENS = {
 const NAV = ['hub', 'squad', 'tactics', 'packs', 'league', 'stats'];
 
 export const store = {
-  state: null, world: null, rng: null, t: S, screen: 'new', cleanup: null, listeners: new Set(),
+  state: null, world: null, rng: null, t: S, screen: 'new', cleanup: null, listeners: new Set(), saveText: '',
   subscribe(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); },
-  emit() { for (const fn of this.listeners) fn(); renderChrome(); },
+  emit() { for (const fn of this.listeners) fn(); renderChrome(); autosave.mark(); },
   dispatch(type, payload = {}) { return dispatch(type, payload); },
 };
+
+// ------------------------------------------------------------------ autosave (IndexedDB, one slot)
+const autosave = createAutosave(
+  () => (store.state && store.world ? { state: store.state, world: store.world, rng: store.rng } : null),
+  (kind, at) => {
+    store.saveText = kind === 'saved' ? fmt(S.save.saved, { time: new Date(at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) }) : S.save.unavailable;
+    const el = document.getElementById('tb-save');
+    if (el) { el.textContent = store.saveText; el.classList.toggle('bad', kind !== 'saved'); }
+  },
+);
+store.autosave = autosave;
 
 // ------------------------------------------------------------------ settings (localStorage only)
 function loadSettings() {
@@ -144,6 +157,36 @@ async function dispatch(type, payload) {
       try { await navigator.clipboard.writeText(JSON.stringify(state)); return { ok: true, msg: 'Save JSON copied to the clipboard' }; } catch (e) { return { ok: false, msg: 'Clipboard blocked: use "Log state to console"' }; }
     }
     case 'cheat/log': { console.log('[cheat] state', state); return { ok: true, msg: 'Logged to the console' }; }
+    case 'game/menu': { await autosave.flush(); return go('new'); }
+    case 'game/resume': {
+      if (!payload.live) {
+        try { adopt(unpackSave(await readSave())); } catch (e) { return { ok: false, error: fmt(S.save.loadFailed, { msg: e.message }) }; }
+      }
+      go('hub');
+      return { ok: true };
+    }
+    case 'game/import': {
+      try { adopt(await importFromFile(payload.file)); } catch (e) { return { ok: false, error: fmt(S.save.loadFailed, { msg: e.message }) }; }
+      autosave.mark();
+      go('hub');
+      return { ok: true };
+    }
+    case 'game/export': {
+      try {
+        await autosave.flush();
+        const save = store.state ? packSave({ state: store.state, world: store.world, rng: store.rng }, Date.now()) : await readSave();
+        if (!save) return { ok: false, error: fmt(S.save.exportFailed, { msg: 'no saved game' }) };
+        await exportToFile(save);
+        return { ok: true };
+      } catch (e) { return { ok: false, error: fmt(S.save.exportFailed, { msg: e.message }) }; }
+    }
+    case 'game/reset': {
+      autosave.cancel();
+      try { await deleteSave(); } catch (e) { /* nothing to delete when storage is blocked */ }
+      store.state = null; store.world = null; store.rng = null; store.saveText = '';
+      go('new');
+      return { ok: true };
+    }
     case 'card/listForSale': return { ok: false, error: S.common.laterPhase };
     default: {
       const handler = squadActions && squadActions[type];
@@ -164,6 +207,12 @@ export function showPack(pack) {
   return openPackUI(root, packView(pack, store.world, store.state), { animLevel: uiSettings.animation, audio });
 }
 
+/** Make a loaded save the live game. */
+function adopt({ state, world, rng }) {
+  store.state = state; store.world = world; store.rng = rng;
+  store.saveText = '';
+}
+
 async function newGame(form) {
   const root = document.getElementById('screen');
   const bar = form.onProgress || (() => {});
@@ -174,7 +223,8 @@ async function newGame(form) {
   const state = createState({ seed: form.seed, worldSize: form.size, country: form.country, club: form.club, settings: uiSettings });
   store.state = state;
   const pack = startGame(state, world, rng);
-  window.__game.state = state;
+  store.saveText = '';
+  autosave.mark(); // the starter squad exists from here on: a reload during the pack opening must not lose it
   go('hub');
   if (!form.skipPack) await showPack(pack);
   store.emit();
@@ -195,16 +245,19 @@ export function go(screen) {
 function renderChrome() {
   const bar = document.getElementById('topbar');
   const nav = document.getElementById('nav');
-  if (!store.state) { bar.hidden = true; nav.hidden = true; return; }
+  if (!store.state || store.screen === 'new') { bar.hidden = true; nav.hidden = true; return; }
   bar.hidden = false; nav.hidden = store.screen === 'match';
   const s = store.state;
   bar.innerHTML = `
     <div class="tb-brand">${S.brand}</div>
     <div class="tb-club">${crestSVG({ ...s.club.crest, size: 28 })}<span>${esc(s.club.name)}</span></div>
     <div class="tb-spacer"></div>
+    <span class="tb-save ${autosave.available ? '' : 'bad'}" id="tb-save">${esc(autosave.available ? store.saveText : S.save.unavailable)}</span>
     <div class="tb-coins" title="${S.hub.coins}"><span class="coin-dot"></span><span id="coin-val">${s.coins.toLocaleString('en-US')}</span></div>
+    <button class="tb-btn" id="btn-menu">${S.save.menu}</button>
     <button class="tb-btn" id="btn-sound" aria-label="${S.topbar.sound}">${uiSettings.sound ? S.topbar.soundOn : S.topbar.muted}</button>`;
   bar.querySelector('#btn-sound').onclick = () => dispatch('settings/set', { sound: !uiSettings.sound });
+  bar.querySelector('#btn-menu').onclick = () => dispatch('game/menu');
   nav.innerHTML = NAV.map((n) => `<button class="nav-btn ${store.screen === n ? 'on' : ''}" data-go="${n}">${S.nav[n]}</button>`).join('');
   nav.querySelectorAll('[data-go]').forEach((b) => { b.onclick = () => go(b.dataset.go); });
 }
@@ -248,8 +301,11 @@ function boot() {
   st.textContent = CHEAT_CSS;
   document.head.appendChild(st);
   mountCheats(store);
-  go('new');
   const q = new URLSearchParams(location.search);
+  if (q.has('bot') || q.has('nosave')) autosave.disabled = true; // bot runs and tests must never overwrite a real save
+  document.addEventListener('visibilitychange', () => { if (document.hidden) autosave.flush(); });
+  window.addEventListener('pagehide', () => { autosave.flush(); });
+  go('new');
   if (q.has('bot')) runBot(q);
 }
 
