@@ -4,7 +4,7 @@ Single-player browser football card manager. Open a pack, build a squad, set tac
 
 Play: https://underscoreloG.github.io/touchline/
 
-Status: playable demo. There is no save game yet, so progress is lost when the page reloads.
+Status: playable demo. The game autosaves to your browser (IndexedDB) after every change. The main page has Continue, Reset, and Export / Import file buttons; the Menu button in the top bar takes you back to it. Clearing site data deletes the save, so use Export for a backup.
 
 ## Screenshots
 

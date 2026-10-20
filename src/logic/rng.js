@@ -4,7 +4,7 @@
 /** @typedef {{ next:()=>number, int:(lo:number,hi:number)=>number, float:(lo:number,hi:number)=>number,
  *   chance:(p:number)=>boolean, pick:<T>(arr:T[])=>T, weighted:<T>(items:T[], weights:number[])=>T,
  *   weightedIndex:(weights:number[])=>number, normal:(mean:number, sd:number)=>number,
- *   shuffle:<T>(arr:T[])=>T[], fork:(label:string|number)=>Rng, state:()=>number }} Rng */
+ *   shuffle:<T>(arr:T[])=>T[], fork:(label:string|number)=>Rng, state:()=>number, setState:(v:number)=>void }} Rng */
 
 /** Hash any string or number to a 32-bit unsigned integer (xmur3-style). */
 export function hashSeed(input) {
@@ -83,6 +83,8 @@ export function rngFrom(seed) {
     /** Independent child stream derived from this seed state and a label. */
     fork(label) { return rngFrom((s0 ^ hashSeed(label)) >>> 0); },
     state() { return a; },
+    /** Restore a position read with state() (save games). */
+    setState(v) { a = v >>> 0; },
   };
   return rng;
 }

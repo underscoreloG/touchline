@@ -399,6 +399,14 @@ export const S = {
     career: 'Career: {a} apps, {g} goals, {as} assists',
   },
   brand,
+  save: {
+    menu: 'Menu', saved: 'Saved {time}', unavailable: 'Saving unavailable',
+    cardTitle: 'Saved game', continue: 'Continue', reset: 'Reset', export: 'Export file', import: 'Import file', importLoose: 'Import a saved file',
+    cardLine: 'Season {season} - {league}', coins: '{n} coins', savedAt: 'Saved {when}', unsaved: 'In this tab, not saved yet',
+    resetAsk: 'Delete this saved game? This cannot be undone.', resetYes: 'Yes, delete it', cancel: 'Cancel',
+    replaceNote: 'Starting a new game replaces your saved game.', replaceConfirm: 'Replace the saved game and start',
+    loadFailed: 'Could not load the save: {msg}', exportFailed: 'Could not export: {msg}', working: 'Loading...',
+  },
   topbar: { sound: 'Sound', soundOn: 'Sound on', muted: 'Muted' },
   cardView: {
     consumable: { fitness: 'Fitness drink', heal: 'Physio treatment', contract: 'Contract extension', morale: 'Team talk' },
