@@ -6,6 +6,21 @@ Play: https://underscoreloG.github.io/touchline/
 
 Status: playable demo. There is no save game yet, so progress is lost when the page reloads.
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Hub](docs/screenshots/02-hub.png) | ![Squad](docs/screenshots/03-squad.png) |
+| Hub: next match, form table, quick links | Squad: 3D pitch, formations, drag and drop |
+| ![League](docs/screenshots/04-league.png) | ![Match](docs/screenshots/08-match.png) |
+| League pyramid: 5 countries x 5 levels, promotion and playoff zones | Live match: 2D top-down view, commentary, touchline shouts |
+| ![Pack opening](docs/screenshots/07-pack-opening.png) | ![Pack summary](docs/screenshots/07b-pack-summary.png) |
+| Pack opening | Pack summary: players, staff, training and consumables |
+| ![Packs shop](docs/screenshots/06-packs.png) | ![Stats](docs/screenshots/05-stats.png) |
+| Pack shop: 12 pack types | Stats: my team, the league, history |
+
+Regenerate them with `node tools/build.js && node tools/shots.js` (needs Chrome or Edge).
+
 ## Build
 
     npm ci
